@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Baby Circle">
+    <title>Baby Circle Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        body, html {
+            height: 100vh;
+            width: 100vw;
+            background-color: #000;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            position: fixed;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+        }
+        
+        #gameContainer {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            background-color: #000;
+            cursor: pointer;
+        }
+        
+        #circle {
+            width: 120px;
+            height: 120px;
+            border: 6px solid white;
+            background-color: white;
+            border-radius: 50%;
+            position: absolute;
+            transition: all 0.3s ease-out;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+            transform-origin: center;
+        }
+        
+        .bounce {
+            animation: bounceEffect 0.3s ease-out;
+        }
+        
+        @keyframes bounceEffect {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        .sparkle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background-color: white;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: sparkleAnimation 1s ease-out forwards;
+        }
+        
+        @keyframes sparkleAnimation {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(2) translate(var(--dx), var(--dy));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="circle"></div>
+    </div>
+
+    <script>
+        class BabyCircleGame {
+            constructor() {
+                this.circle = document.getElementById('circle');
+                this.container = document.getElementById('gameContainer');
+                this.circleSize = 120;
+                this.borderSize = 6;
+                this.moveDistance = 80;
+                
+                this.init();
+                this.setupEventListeners();
+            }
+            
+            init() {
+                // Start circle in center of screen
+                this.centerCircle();
+            }
+            
+            centerCircle() {
+                const containerRect = this.container.getBoundingClientRect();
+                const x = (containerRect.width - this.circleSize) / 2;
+                const y = (containerRect.height - this.circleSize) / 2;
+                
+                this.circle.style.left = x + 'px';
+                this.circle.style.top = y + 'px';
+            }
+            
+            setupEventListeners() {
+                // Handle both touch and click events
+                this.container.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    this.handleInteraction(touch.clientX, touch.clientY);
+                });
+                
+                this.container.addEventListener('click', (e) => {
+                    this.handleInteraction(e.clientX, e.clientY);
+                });
+                
+                // Prevent scrolling and zooming
+                document.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                }, { passive: false });
+                
+                document.addEventListener('gesturestart', (e) => {
+                    e.preventDefault();
+                });
+                
+                // Handle orientation changes
+                window.addEventListener('orientationchange', () => {
+                    setTimeout(() => {
+                        this.centerCircle();
+                    }, 100);
+                });
+                
+                window.addEventListener('resize', () => {
+                    this.centerCircle();
+                });
+            }
+            
+            handleInteraction(clientX, clientY) {
+                const circleRect = this.circle.getBoundingClientRect();
+                const circleCenterX = circleRect.left + circleRect.width / 2;
+                const circleCenterY = circleRect.top + circleRect.height / 2;
+                
+                // Check if touch/click is on the circle
+                const distance = Math.sqrt(
+                    Math.pow(clientX - circleCenterX, 2) + 
+                    Math.pow(clientY - circleCenterY, 2)
+                );
+                
+                if (distance <= this.circleSize / 2) {
+                    this.moveCircle();
+                    this.addBounceEffect();
+                    this.createSparkles(circleCenterX, circleCenterY);
+                }
+            }
+            
+            moveCircle() {
+                const currentLeft = parseInt(this.circle.style.left) || 0;
+                const currentTop = parseInt(this.circle.style.top) || 0;
+                
+                // Random direction
+                const angle = Math.random() * 2 * Math.PI;
+                let newX = currentLeft + Math.cos(angle) * this.moveDistance;
+                let newY = currentTop + Math.sin(angle) * this.moveDistance;
+                
+                // Check boundaries and wrap around
+                const containerRect = this.container.getBoundingClientRect();
+                const maxX = containerRect.width - this.circleSize;
+                const maxY = containerRect.height - this.circleSize;
+                
+                // Wrap around horizontally
+                if (newX < 0) {
+                    newX = maxX;
+                } else if (newX > maxX) {
+                    newX = 0;
+                }
+                
+                // Wrap around vertically
+                if (newY < 0) {
+                    newY = maxY;
+                } else if (newY > maxY) {
+                    newY = 0;
+                }
+                
+                this.circle.style.left = newX + 'px';
+                this.circle.style.top = newY + 'px';
+            }
+            
+            addBounceEffect() {
+                this.circle.classList.remove('bounce');
+                // Force reflow
+                this.circle.offsetHeight;
+                this.circle.classList.add('bounce');
+                
+                setTimeout(() => {
+                    this.circle.classList.remove('bounce');
+                }, 300);
+            }
+            
+            createSparkles(centerX, centerY) {
+                for (let i = 0; i < 8; i++) {
+                    const sparkle = document.createElement('div');
+                    sparkle.className = 'sparkle';
+                    
+                    const angle = (i / 8) * 2 * Math.PI;
+                    const distance = 60;
+                    const dx = Math.cos(angle) * distance;
+                    const dy = Math.sin(angle) * distance;
+                    
+                    sparkle.style.left = centerX + 'px';
+                    sparkle.style.top = centerY + 'px';
+                    sparkle.style.setProperty('--dx', dx + 'px');
+                    sparkle.style.setProperty('--dy', dy + 'px');
+                    
+                    document.body.appendChild(sparkle);
+                    
+                    setTimeout(() => {
+                        if (sparkle.parentNode) {
+                            sparkle.parentNode.removeChild(sparkle);
+                        }
+                    }, 1000);
+                }
+            }
+        }
+        
+        // Start the game when the page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            new BabyCircleGame();
+        });
+    </script>
+</body>
+</html>
