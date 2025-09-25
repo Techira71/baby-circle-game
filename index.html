@@ -1,12 +1,13 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="Baby Circles">
-    <title>Baby Multi-Touch Circles Game</title>
+    <meta name="apple-mobile-web-app-title" content="Baby Circle">
+    <title>Baby Gray Circle Game</title>
     <style>
         * {
             margin: 0;
@@ -17,409 +18,282 @@
             -ms-user-select: none;
             user-select: none;
         }
-        
-        body, html {
-            height: 100vh;
-            width: 100vw;
-            background-color: #000;
-            overflow: hidden;
-            font-family: Arial, sans-serif;
-            position: fixed;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
+
+```
+    body, html {
+        height: 100vh;
+        width: 100vw;
+        background-color: #000;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+        position: fixed;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+    }
+    
+    #gameContainer {
+        width: 100vw;
+        height: 100vh;
+        position: relative;
+        background-color: #000;
+        cursor: pointer;
+    }
+    
+    .circle {
+        width: 120px;
+        height: 120px;
+        border: 6px solid #888888;
+        background-color: #888888;
+        border-radius: 50%;
+        position: absolute;
+        transition: transform 0.2s ease-out;
+        box-shadow: 0 0 20px rgba(136, 136, 136, 0.5);
+        transform-origin: center;
+        z-index: 10;
+    }
+    
+    .touched {
+        transform: scale(1.2);
+        animation: pulse 0.4s ease-in-out;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1.2); }
+        50% { transform: scale(1.3); }
+        100% { transform: scale(1.2); }
+    }
+    
+    .sparkle {
+        position: absolute;
+        width: 6px;
+        height: 6px;
+        background-color: #888888;
+        border-radius: 50%;
+        pointer-events: none;
+        animation: sparkleAnimation 1.2s ease-out forwards;
+        z-index: 20;
+    }
+    
+    @keyframes sparkleAnimation {
+        0% {
+            opacity: 1;
+            transform: scale(1);
         }
-        
-        #gameContainer {
-            width: 100vw;
-            height: 100vh;
-            position: relative;
-            background-color: #000;
-            cursor: pointer;
+        100% {
+            opacity: 0;
+            transform: scale(3) translate(var(--dx), var(--dy));
         }
-        
-        .circle {
-            width: 100px;
-            height: 100px;
-            border: 5px solid;
-            border-radius: 50%;
-            position: absolute;
-            transition: transform 0.2s ease-out;
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
-            transform-origin: center;
-            z-index: 10;
-        }
-        
-        #whiteCircle {
-            background-color: white;
-            border-color: white;
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
-        }
-        
-        #blueCircle {
-            background-color: #4A90E2;
-            border-color: #4A90E2;
-            box-shadow: 0 0 15px rgba(74, 144, 226, 0.5);
-        }
-        
-        #grayCircle {
-            background-color: #888888;
-            border-color: #888888;
-            box-shadow: 0 0 15px rgba(136, 136, 136, 0.5);
-        }
-        
-        .touched {
-            transform: scale(1.1);
-            animation: pulse 0.5s ease-in-out;
-        }
-        
-        .moving {
-            animation: gentle-glow 2s ease-in-out infinite;
-        }
-        
-        @keyframes pulse {
-            0% { transform: scale(1.1); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1.1); }
-        }
-        
-        @keyframes gentle-glow {
-            0% { box-shadow: 0 0 15px rgba(255, 255, 255, 0.3); }
-            50% { box-shadow: 0 0 25px rgba(255, 255, 255, 0.6); }
-            100% { box-shadow: 0 0 15px rgba(255, 255, 255, 0.3); }
-        }
-        
-        .sparkle {
-            position: absolute;
-            width: 4px;
-            height: 4px;
-            background-color: white;
-            border-radius: 50%;
-            pointer-events: none;
-            animation: sparkleAnimation 1s ease-out forwards;
-            z-index: 20;
-        }
-        
-        @keyframes sparkleAnimation {
-            0% {
-                opacity: 1;
-                transform: scale(1);
-            }
-            100% {
-                opacity: 0;
-                transform: scale(2) translate(var(--dx), var(--dy));
-            }
-        }
-        
-        .blue-sparkle {
-            background-color: #4A90E2;
-        }
-        
-        .gray-sparkle {
-            background-color: #888888;
-        }
-    </style>
+    }
+</style>
+```
+
 </head>
 <body>
     <div id="gameContainer">
-        <div id="whiteCircle" class="circle"></div>
-        <div id="blueCircle" class="circle"></div>
         <div id="grayCircle" class="circle"></div>
     </div>
 
-    <script>
-        class BabyMultiTouchCirclesGame {
-            constructor() {
-                this.whiteCircle = document.getElementById('whiteCircle');
-                this.blueCircle = document.getElementById('blueCircle');
-                this.grayCircle = document.getElementById('grayCircle');
-                this.container = document.getElementById('gameContainer');
-                this.circleSize = 100;
-                this.borderSize = 5;
-                this.activeTouches = new Map(); // Track all active touches
-                
-                this.circles = [
-                    {
-                        element: this.whiteCircle,
-                        x: 100,
-                        y: 100,
-                        vx: 1.5,
-                        vy: 1.2,
-                        isTouched: false,
-                        touchTimer: null,
-                        color: 'white',
-                        type: 'floating'
-                    },
-                    {
-                        element: this.blueCircle,
-                        x: 200,
-                        y: 150,
-                        vx: -1.8,
-                        vy: 1.6,
-                        isTouched: false,
-                        touchTimer: null,
-                        color: 'blue',
-                        type: 'floating'
-                    },
-                    {
-                        element: this.grayCircle,
-                        x: 300,
-                        y: 200,
-                        vx: 0,
-                        vy: 0,
-                        isTouched: false,
-                        touchTimer: null,
-                        color: 'gray',
-                        type: 'touch-move'
-                    }
-                ];
-                
-                this.init();
-                this.setupEventListeners();
-                this.startAnimation();
-            }
+```
+<script>
+    class BabyGrayCircleGame {
+        constructor() {
+            this.grayCircle = document.getElementById('grayCircle');
+            this.container = document.getElementById('gameContainer');
+            this.circleSize = 120;
+            this.activeTouches = new Map();
             
-            init() {
-                const containerRect = this.container.getBoundingClientRect();
-                
-                // Position circles safely inside the container
-                this.circles.forEach((circle, index) => {
-                    circle.x = (index * 120 + 50) % (containerRect.width - this.circleSize);
-                    circle.y = (index * 80 + 50) % (containerRect.height - this.circleSize);
-                    this.updateCirclePosition(circle);
-                });
-            }
+            this.circle = {
+                element: this.grayCircle,
+                x: 0,
+                y: 0
+            };
             
-            updateCirclePosition(circle) {
-                circle.element.style.left = circle.x + 'px';
-                circle.element.style.top = circle.y + 'px';
-            }
+            this.init();
+            this.setupEventListeners();
+        }
+        
+        init() {
+            // Start circle in center of screen
+            this.centerCircle();
+        }
+        
+        centerCircle() {
+            const containerRect = this.container.getBoundingClientRect();
+            this.circle.x = (containerRect.width - this.circleSize) / 2;
+            this.circle.y = (containerRect.height - this.circleSize) / 2;
+            this.updateCirclePosition();
+        }
+        
+        updateCirclePosition() {
+            this.circle.element.style.left = this.circle.x + 'px';
+            this.circle.element.style.top = this.circle.y + 'px';
+        }
+        
+        setupEventListeners() {
+            // Handle multi-touch events
+            this.container.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                this.handleTouchStart(e);
+            });
             
-            setupEventListeners() {
-                // Handle multi-touch events
-                this.container.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    this.handleTouchStart(e);
-                });
-                
-                this.container.addEventListener('touchmove', (e) => {
-                    e.preventDefault();
-                    this.handleTouchMove(e);
-                });
-                
-                this.container.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    this.handleTouchEnd(e);
-                });
-                
-                // Handle mouse events for desktop testing
-                this.container.addEventListener('mousedown', (e) => {
-                    this.handleSingleTouch(e.clientX, e.clientY, 'mouse');
-                });
-                
-                // Prevent scrolling and zooming
-                document.addEventListener('touchmove', (e) => {
-                    e.preventDefault();
-                }, { passive: false });
-                
-                document.addEventListener('gesturestart', (e) => {
-                    e.preventDefault();
-                });
-                
-                // Handle orientation changes
-                window.addEventListener('orientationchange', () => {
-                    setTimeout(() => {
-                        this.init();
-                    }, 100);
-                });
-                
-                window.addEventListener('resize', () => {
-                    this.init();
-                });
-            }
+            this.container.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                this.handleTouchMove(e);
+            });
             
-            handleTouchStart(e) {
-                // Process each new touch
-                for (let i = 0; i < e.changedTouches.length; i++) {
-                    const touch = e.changedTouches[i];
-                    this.activeTouches.set(touch.identifier, {
-                        x: touch.clientX,
-                        y: touch.clientY,
-                        startTime: Date.now()
-                    });
-                    
-                    // Only process if this is a new touch on a circle
-                    this.handleSingleTouch(touch.clientX, touch.clientY, touch.identifier);
-                }
-            }
+            this.container.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                this.handleTouchEnd(e);
+            });
             
-            handleTouchMove(e) {
-                // Update active touches positions
-                for (let i = 0; i < e.changedTouches.length; i++) {
-                    const touch = e.changedTouches[i];
-                    if (this.activeTouches.has(touch.identifier)) {
-                        const activeTouch = this.activeTouches.get(touch.identifier);
-                        activeTouch.x = touch.clientX;
-                        activeTouch.y = touch.clientY;
-                    }
-                }
-            }
+            // Handle mouse events for desktop testing
+            this.container.addEventListener('mousedown', (e) => {
+                this.handleSingleTouch(e.clientX, e.clientY, 'mouse');
+            });
             
-            handleTouchEnd(e) {
-                // Remove ended touches
-                for (let i = 0; i < e.changedTouches.length; i++) {
-                    const touch = e.changedTouches[i];
-                    this.activeTouches.delete(touch.identifier);
-                }
-            }
+            // Prevent scrolling and zooming
+            document.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+            }, { passive: false });
             
-            handleSingleTouch(clientX, clientY, touchId) {
-                this.circles.forEach(circle => {
-                    const circleRect = circle.element.getBoundingClientRect();
-                    const circleCenterX = circleRect.left + circleRect.width / 2;
-                    const circleCenterY = circleRect.top + circleRect.height / 2;
-                    
-                    // Check if touch is on this circle
-                    const distance = Math.sqrt(
-                        Math.pow(clientX - circleCenterX, 2) + 
-                        Math.pow(clientY - circleCenterY, 2)
-                    );
-                    
-                    if (distance <= this.circleSize / 2) {
-                        if (circle.type === 'floating') {
-                            this.touchFloatingCircle(circle, circleCenterX, circleCenterY);
-                        } else if (circle.type === 'touch-move') {
-                            this.touchGrayCircle(circle, circleCenterX, circleCenterY);
-                        }
-                    }
-                });
-            }
+            document.addEventListener('gesturestart', (e) => {
+                e.preventDefault();
+            });
             
-            touchFloatingCircle(circle, centerX, centerY) {
-                // Stop the floating circle
-                circle.isTouched = true;
-                circle.element.classList.add('touched');
-                circle.element.classList.remove('moving');
-                
-                // Clear any existing timer
-                if (circle.touchTimer) {
-                    clearTimeout(circle.touchTimer);
-                }
-                
-                // Create sparkles
-                this.createSparkles(centerX, centerY, circle.color);
-                
-                // Resume movement after 2 seconds
-                circle.touchTimer = setTimeout(() => {
-                    circle.isTouched = false;
-                    circle.element.classList.remove('touched');
-                    circle.element.classList.add('moving');
-                }, 2000);
-            }
-            
-            touchGrayCircle(circle, centerX, centerY) {
-                // Gray circle moves in random direction when touched
-                const angle = Math.random() * 2 * Math.PI;
-                const moveDistance = 100;
-                
-                const containerRect = this.container.getBoundingClientRect();
-                const maxX = containerRect.width - this.circleSize;
-                const maxY = containerRect.height - this.circleSize;
-                
-                let newX = circle.x + Math.cos(angle) * moveDistance;
-                let newY = circle.y + Math.sin(angle) * moveDistance;
-                
-                // Keep within bounds
-                newX = Math.max(0, Math.min(maxX, newX));
-                newY = Math.max(0, Math.min(maxY, newY));
-                
-                circle.x = newX;
-                circle.y = newY;
-                this.updateCirclePosition(circle);
-                
-                // Add visual feedback
-                circle.element.classList.add('touched');
-                this.createSparkles(centerX, centerY, circle.color);
-                
+            // Handle orientation changes
+            window.addEventListener('orientationchange', () => {
                 setTimeout(() => {
-                    circle.element.classList.remove('touched');
-                }, 300);
-            }
+                    this.centerCircle();
+                }, 100);
+            });
             
-            createSparkles(centerX, centerY, color) {
-                const sparkleCount = color === 'gray' ? 4 : 6;
-                
-                for (let i = 0; i < sparkleCount; i++) {
-                    const sparkle = document.createElement('div');
-                    sparkle.className = 'sparkle';
-                    
-                    if (color === 'blue') sparkle.classList.add('blue-sparkle');
-                    if (color === 'gray') sparkle.classList.add('gray-sparkle');
-                    
-                    const angle = (i / sparkleCount) * 2 * Math.PI;
-                    const distance = 50;
-                    const dx = Math.cos(angle) * distance;
-                    const dy = Math.sin(angle) * distance;
-                    
-                    sparkle.style.left = centerX + 'px';
-                    sparkle.style.top = centerY + 'px';
-                    sparkle.style.setProperty('--dx', dx + 'px');
-                    sparkle.style.setProperty('--dy', dy + 'px');
-                    
-                    document.body.appendChild(sparkle);
-                    
-                    setTimeout(() => {
-                        if (sparkle.parentNode) {
-                            sparkle.parentNode.removeChild(sparkle);
-                        }
-                    }, 1000);
-                }
-            }
-            
-            moveCircles() {
-                const containerRect = this.container.getBoundingClientRect();
-                const maxX = containerRect.width - this.circleSize;
-                const maxY = containerRect.height - this.circleSize;
-                
-                this.circles.forEach(circle => {
-                    if (circle.type === 'floating' && !circle.isTouched) {
-                        // Update position for floating circles only
-                        circle.x += circle.vx;
-                        circle.y += circle.vy;
-                        
-                        // Bounce off edges
-                        if (circle.x <= 0 || circle.x >= maxX) {
-                            circle.vx = -circle.vx;
-                            circle.x = Math.max(0, Math.min(maxX, circle.x));
-                        }
-                        
-                        if (circle.y <= 0 || circle.y >= maxY) {
-                            circle.vy = -circle.vy;
-                            circle.y = Math.max(0, Math.min(maxY, circle.y));
-                        }
-                        
-                        this.updateCirclePosition(circle);
-                        
-                        // Add gentle glow to moving circles
-                        if (!circle.element.classList.contains('moving')) {
-                            circle.element.classList.add('moving');
-                        }
-                    }
+            window.addEventListener('resize', () => {
+                this.centerCircle();
+            });
+        }
+        
+        handleTouchStart(e) {
+            // Process each new touch
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                this.activeTouches.set(touch.identifier, {
+                    x: touch.clientX,
+                    y: touch.clientY,
+                    startTime: Date.now()
                 });
-            }
-            
-            startAnimation() {
-                const animate = () => {
-                    this.moveCircles();
-                    requestAnimationFrame(animate);
-                };
-                animate();
+                
+                // Check if this touch is on the circle
+                this.handleSingleTouch(touch.clientX, touch.clientY, touch.identifier);
             }
         }
         
-        // Start the game when the page loads
-        window.addEventListener('DOMContentLoaded', () => {
-            new BabyMultiTouchCirclesGame();
-        });
-    </script>
+        handleTouchMove(e) {
+            // Update active touches positions
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                if (this.activeTouches.has(touch.identifier)) {
+                    const activeTouch = this.activeTouches.get(touch.identifier);
+                    activeTouch.x = touch.clientX;
+                    activeTouch.y = touch.clientY;
+                }
+            }
+        }
+        
+        handleTouchEnd(e) {
+            // Remove ended touches
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                this.activeTouches.delete(touch.identifier);
+            }
+        }
+        
+        handleSingleTouch(clientX, clientY, touchId) {
+            const circleRect = this.circle.element.getBoundingClientRect();
+            const circleCenterX = circleRect.left + circleRect.width / 2;
+            const circleCenterY = circleRect.top + circleRect.height / 2;
+            
+            // Check if touch is on the circle
+            const distance = Math.sqrt(
+                Math.pow(clientX - circleCenterX, 2) + 
+                Math.pow(clientY - circleCenterY, 2)
+            );
+            
+            if (distance <= this.circleSize / 2) {
+                this.touchCircle(circleCenterX, circleCenterY);
+            }
+        }
+        
+        touchCircle(centerX, centerY) {
+            // Move circle to random new position
+            const angle = Math.random() * 2 * Math.PI;
+            const moveDistance = Math.random() * 150 + 80; // Random distance between 80-230px
+            
+            const containerRect = this.container.getBoundingClientRect();
+            const maxX = containerRect.width - this.circleSize;
+            const maxY = containerRect.height - this.circleSize;
+            
+            let newX = this.circle.x + Math.cos(angle) * moveDistance;
+            let newY = this.circle.y + Math.sin(angle) * moveDistance;
+            
+            // Keep within bounds
+            newX = Math.max(0, Math.min(maxX, newX));
+            newY = Math.max(0, Math.min(maxY, newY));
+            
+            // If too close to edge, try opposite direction
+            if (newX <= 50 || newX >= maxX - 50 || newY <= 50 || newY >= maxY - 50) {
+                newX = this.circle.x - Math.cos(angle) * moveDistance;
+                newY = this.circle.y - Math.sin(angle) * moveDistance;
+                newX = Math.max(50, Math.min(maxX - 50, newX));
+                newY = Math.max(50, Math.min(maxY - 50, newY));
+            }
+            
+            this.circle.x = newX;
+            this.circle.y = newY;
+            this.updateCirclePosition();
+            
+            // Add visual feedback
+            this.circle.element.classList.add('touched');
+            this.createSparkles(centerX, centerY);
+            
+            setTimeout(() => {
+                this.circle.element.classList.remove('touched');
+            }, 400);
+        }
+        
+        createSparkles(centerX, centerY) {
+            const sparkleCount = 8;
+            
+            for (let i = 0; i < sparkleCount; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.className = 'sparkle';
+                
+                const angle = (i / sparkleCount) * 2 * Math.PI;
+                const distance = Math.random() * 60 + 40; // Random distance
+                const dx = Math.cos(angle) * distance;
+                const dy = Math.sin(angle) * distance;
+                
+                sparkle.style.left = centerX + 'px';
+                sparkle.style.top = centerY + 'px';
+                sparkle.style.setProperty('--dx', dx + 'px');
+                sparkle.style.setProperty('--dy', dy + 'px');
+                
+                document.body.appendChild(sparkle);
+                
+                setTimeout(() => {
+                    if (sparkle.parentNode) {
+                        sparkle.parentNode.removeChild(sparkle);
+                    }
+                }, 1200);
+            }
+        }
+    }
+    
+    // Start the game when the page loads
+    window.addEventListener('DOMContentLoaded', () => {
+        new BabyGrayCircleGame();
+    });
+</script>
+```
+
 </body>
 </html>
